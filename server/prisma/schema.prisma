@@ -6,9 +6,57 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sites     Site[]
+}
+
+model Site {
+  id          String   @id @default(uuid())
+  name        String
+  subdomain   String   @unique
+  customDomain String? @unique
+  description String?
+  isPublished Boolean  @default(false)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pages       Page[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Page {
+  id        String      @id @default(uuid())
+  title     String
+  slug      String
+  siteId    String
+  site      Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  components Component[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([siteId, slug])
+}
+
+model Component {
+  id         String   @id @default(uuid())
+  type       String   // e.g. "Hero", "Text", "Image"
+  properties Json     // Stores dynamic props like { text: "Hello", color: "#000" }
+  order      Int      // Order on the page
+  pageId     String
+  page       Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
